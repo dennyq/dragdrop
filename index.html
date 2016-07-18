@@ -1,0 +1,109 @@
+<html>
+<head>
+    <script type="text/javascript" src="jquery-2.2.3.min.js"></script>
+    <script type="text/javascript" src="jquery-ui.min.js"></script>
+    <script type="text/javascript" src="knockout-3.2.0.min.js"></script>
+    <style type="text/css">
+        *{
+            font-family: Helvetica, Arial;
+        }
+        ul{
+            list-style: square;
+        }
+        #toppings li{
+            border:1px solid brown;
+            width:150px;
+            cursor:default;
+        }
+        #pizza{
+            border:1px solid red;
+            width:400px;
+            height:400px;
+            border-radius:200px;
+        }
+        #pizza p{
+            font-weight:bold;
+            text-align:center;
+        }
+        #pizza div{
+            padding:50px;
+        }
+    </style>
+</head>
+<body>
+<p>Drag toppings onto the pizza.</p>
+<ul id="toppings" data-bind="foreach: toppings">
+    <li data-bind="text: $data, drag: {value: $data}"></li>
+</ul>
+<br>
+<!-- ko with: pizza -->
+<div id="pizza" data-bind="drop: {value: latestTopping}">
+    <div data-bind="visible:(!!latestTopping())">
+        <p >Thanks for adding <span data-bind="text:latestTopping"></span>!</p>
+        <span>So far, you've added:</span>
+        <ul data-bind="foreach: toppingStack">
+            <li data-bind="text: $data"></li>
+        </ul>
+    </div>
+</div>
+<!-- /ko -->
+<script>
+    $(function(){
+        (function() {
+            var _dragged;
+            ko.bindingHandlers.drag = {
+                init: function(element, valueAccessor, allBindingsAccessor, viewModel) {
+                    var dragElement = $(element);
+                    var dragOptions = {
+                        helper: 'clone',
+                        revert: true,
+                        revertDuration: 0,
+                        start: function() {
+                            _dragged = ko.utils.unwrapObservable(valueAccessor().value);
+                        },
+                        cursor: 'default'
+                    };
+                    dragElement.draggable(dragOptions).disableSelection();
+                }
+            };
+
+            ko.bindingHandlers.drop = {
+                init: function(element, valueAccessor, allBindingsAccessor, viewModel) {
+                    var dropElement = $(element);
+                    var dropOptions = {
+                        drop: function(event, ui) {
+                            valueAccessor().value(_dragged);
+                        }
+                    };
+                    dropElement.droppable(dropOptions);
+                }
+            };
+        })();
+
+        // ---------------------
+        // Now use it.
+        // ---------------------
+        function Pizza() {
+            this.toppingStack = ko.observableArray();
+            this.latestTopping = ko.computed({
+                read: function() {
+                    return this.toppingStack().length ? this.toppingStack()[0] : "";
+                },
+                write: function(value) {
+                    this.toppingStack.unshift(value);
+                },
+                owner: this
+            });
+
+        }
+        var pizzaria = {
+            toppings: ["Pepperoni", "Olives", "Sausage", "Bacon", "Canadian Bacon", "Chilean Bacon"],
+            pizza: new Pizza()
+        };
+
+        ko.applyBindings(pizzaria);
+    })
+</script>
+</body>
+
+</html>
